@@ -35,10 +35,7 @@
 
 #include <inttypes.h>
 
-// define arduino pins 
 
-#define SX1         2    // input of "positive" signal
-#define SX2         3    // input of "negative" signal
 
 
 
@@ -50,17 +47,39 @@
 #define MAX_DATACOUNT    7    // 7 dataframes in 1 SYNC Channel
 #define MAX_DATABITCOUNT 12   // 12 bits in 1 frame
 
-#define MAX_CHANNEL_NUMBER 112   // SX channels
+
+#if defined(__AVR_ATmega328P__)
+
+#define N_CHAN  112       // index for declaring "_sx[]" data array
+#define SX1         2    // default input of "positive" signal
+#define SX2         3    // default input of "negative" signal
+
+#elif defined(__AVR_ATtiny4313__)  
+#define N_CHAN  1        // much less memory than Atmega328  
+#define SX1         4    // default input of "positive" signal for ATtiny4313
+#define SX2         5    // default input of "negative" signal
+
+#else
+
+#error "Processor not supported"
+#endif 
+
+
 
 class PX {
 public:
 	PX();
 	void init(void);
-    	uint8_t get(uint8_t);
+        void init(uint8_t, uint8_t);
+    	
 	void isr(void);
-void isr2(void);
-
-
+        void isr2(void);
+#if defined(__AVR_ATmega328P__)
+	uint8_t get(uint8_t);
+#else
+        uint8_t get(void);   // single channel
+        void setChannel(uint8_t);     // set the active channel for ATtiny4313
+#endif
 
 private:
 	void switchAdr(void);
@@ -76,12 +95,13 @@ private:
 	uint8_t _data;    // 1 data uint8_t
 	uint8_t _baseAdr;   // base address
 	uint8_t _triggerAdr;  // SX address to trigger scope
-    uint8_t _scopeFlag;   // generate scope trigger signal if != 0
+        uint8_t _scopeFlag;   // generate scope trigger signal if != 0
 
 	uint8_t _bit;
-    uint8_t _inbit;
-    uint8_t _lastInbit;
-	volatile uint8_t _sx[MAX_CHANNEL_NUMBER];   // to store the SX data
+        uint8_t _inbit;
+        uint8_t _lastInbit;
+	volatile uint8_t _sx[N_CHAN];   // to store the SX data
+        volatile uint8_t _activeChannel;    // in case we read only a single channel
 
 	uint8_t _channel;   // channel from 0 to 15, B3..B0 in sync data
 	// 0  0  0  1  X   1  B3  B2  1  B1  B0  1 == sync frame of 12 bits

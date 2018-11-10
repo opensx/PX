@@ -50,7 +50,27 @@ void PX::init() {
     pinMode(SX1, INPUT);     // track 1 input
     pinMode(SX2, INPUT);      // track 2 input
 
-    for (int i = 0; i < 112; i++) {
+    for (int i = 0; i < N_CHAN; i++) {
+        // reset sx variable to zero
+        _sx[i] = 0;
+    }
+    _toggle = 0;
+    _adrCount = 0;
+
+    // start always with search for SYNC
+    _state = SYNC;
+    _zeroCount = 0;
+}
+
+void PX::init(uint8_t in1, uint8_t in2) {
+    // initialize function
+    // initialize pins and variables
+    // and start looking for a SYNC signal
+
+    pinMode(in1, INPUT);     // track 1 input
+    pinMode(in2, INPUT);      // track 2 input
+
+    for (int i = 0; i < N_CHAN; i++) {
         // reset sx variable to zero
         _sx[i] = 0;
     }
@@ -155,12 +175,13 @@ void PX::switchData() {
     case 11:  // == MAX_DATABITCOUNT
         // _bit value should always equal HIGH, not tested here.
         // copy _data byte to SX _channel
-
-        _sx[_channel] = _data;
-
-        if (_channel == 14) {
-            n_int++;
+#if defined(__AVR_ATmega328P__)
+        _sx[_channel] = _data;    // read all channels
+#else
+        if (_channel == _activeChannel) {
+           _sx[0] = _data;        // read only a single channel (low mem)
         }
+#endif 
 
         // increment dataFrameCount to move on the next DATA byte
         // check, if we already reached the last DATA block - in this
@@ -180,6 +201,7 @@ void PX::switchData() {
     }  //end switch/case _dataBitCount
 }
 
+#if defined(__AVR_ATmega328P__)
 uint8_t PX::get(uint8_t channel) {
     // returns the value of a SX channel
     if (channel < MAX_CHANNEL_NUMBER)
@@ -187,6 +209,14 @@ uint8_t PX::get(uint8_t channel) {
     else
         return 0;
 }
+#else 
+uint8_t PX::get() {
+    return _sx[0];
+}
+void PX::setChannel(uint8_t channel) {
+    _activeChannel = channel;
+}
+#endif
 
 void PX::isr() {
 
