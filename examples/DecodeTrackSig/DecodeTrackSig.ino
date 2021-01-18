@@ -2,7 +2,7 @@
  * DecodeTrackSig.ino
  *
  *  Created on: 08.10.2016
- *  Changed on: 
+ *  Changed on: 18.01.2020 
  *  
  *  Author: Michael Blank
  *  
@@ -26,7 +26,7 @@ PX sx;                // library
 
 
 static int ledState = LOW;
-static byte oldSx[MAX_CHANNEL_NUMBER];
+static byte oldSx[N_CHAN];
 
 void printSXValue(int i,int data) {
     // send data for 1 SX Channel on serial port
@@ -60,17 +60,16 @@ void setup() {
     pinMode(LED_PIN,OUTPUT);
     pinMode(LED_97_1,OUTPUT);
     pinMode(LED_97_2,OUTPUT);
-    pinMode(SCOPE,OUTPUT);
     
     digitalWrite(LED_PIN, ledState);
     Serial.begin(115200);      // open the serial port
-    for (int i=0; i<112;i++) {
+    for (int i=0; i<N_CHAN; i++) {
         oldSx[i]=0;   // initialize to zero
         printSXValue(i,0);
     }
 
     // initialize interrupt routine
-    sx.init(97);   // scope triggered at channel 97
+    sx.init();  
 
     // RISING slope on INT0/INT1 trigger the interrupt routine sxisr (see above)
     attachInterrupt(digitalPinToInterrupt(SX1), sxisr, RISING);
@@ -81,7 +80,7 @@ void setup() {
 void loop() {
   
 	// check selectrix channels for changes
-    for (int i=0; i<112; i++) {
+    for (int i=0; i<N_CHAN; i++) {
         byte d=sx.get(i);
         if (oldSx[i] != d) {   // data have changed on SX bus
             oldSx[i] = d;
