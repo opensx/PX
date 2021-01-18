@@ -204,7 +204,7 @@ void PX::switchData() {
 #if defined(__AVR_ATmega328P__)
 uint8_t PX::get(uint8_t channel) {
     // returns the value of a SX channel
-    if (channel < MAX_CHANNEL_NUMBER)
+    if (channel < N_CHAN)
         return _sx[channel];
     else
         return 0;
